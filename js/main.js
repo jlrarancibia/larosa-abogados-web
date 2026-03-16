@@ -36,28 +36,15 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  // ── Contact form handler ──
-  document.querySelectorAll('form[data-form]').forEach(form => {
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      const btn = form.querySelector('button[type=submit]');
-      const orig = btn.textContent;
-      btn.textContent = 'Enviando…';
-      btn.disabled = true;
-      setTimeout(() => {
-        btn.textContent = '✓ Mensaje enviado';
-        btn.style.background = '#25d366';
-        // GTM event
-        if (window.dataLayer) {
-          window.dataLayer.push({ event: 'form_submit', form_id: form.dataset.form });
-        }
-        setTimeout(() => {
-          btn.textContent = orig;
-          btn.disabled = false;
-          btn.style.background = '';
-          form.reset();
-        }, 4000);
-      }, 1200);
+  // ── Netlify form tracking ──
+  document.querySelectorAll('form[data-netlify]').forEach(form => {
+    form.addEventListener('submit', function () {
+      if (window.dataLayer) {
+        window.dataLayer.push({ event: 'form_submit', form_name: form.getAttribute('name') });
+      }
+      if (window.fbq) {
+        window.fbq('track', 'Lead');
+      }
     });
   });
 
