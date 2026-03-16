@@ -261,7 +261,7 @@
   <div class="container">
     <div class="why-grid">
       <div class="why-img-wrap">
-        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=900&h=600&fit=crop&q=80" alt="Abogado en consulta con cliente en Lima" class="section-img" style="aspect-ratio:4/5;" />
+        <img src="img/jorge-larosa.jpg.png" alt="Jorge H. La Rosa Ruiz – Abogado en Lima con más de 20 años de experiencia" class="section-img parallax-photo" />
         <div class="why-badge">
           <div class="badge-num">+20</div>
           <div class="badge-text">años de experiencia</div>
@@ -436,7 +436,9 @@
     <p class="lead-sub">Contáctanos de manera confidencial. Entendemos que los conflictos legales pueden ser complejos; estamos aquí para ayudarte.</p>
     <span class="lead-notice"><i class="fa-solid fa-lock"></i> Consulta 100% confidencial</span>
 
-    <form data-form="lead-home" class="lead-form">
+    <form name="consulta-inicio" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="lead-form">
+      <input type="hidden" name="form-name" value="consulta-inicio" />
+      <p style="display:none;"><label>No llenar: <input name="bot-field" /></label></p>
       <div class="form-group">
         <label for="lead-nombre">Nombre *</label>
         <input type="text" id="lead-nombre" name="nombre" placeholder="Tu nombre completo" required />

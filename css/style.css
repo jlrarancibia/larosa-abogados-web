@@ -414,6 +414,18 @@ nav { display: flex; align-items: center; gap: 4px; }
 }
 .why-img-wrap {
   position: relative;
+  perspective: 800px;
+}
+.why-img-wrap img.parallax-photo {
+  width: 100%;
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.why-img-wrap:hover img.parallax-photo {
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
 }
 .why-img-wrap img {
   width: 100%;

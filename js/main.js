@@ -117,4 +117,21 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
+  // ── Parallax 3D hover effect on photo ──
+  const parallaxWrap = document.querySelector('.why-img-wrap');
+  const parallaxImg = document.querySelector('.parallax-photo');
+  if (parallaxWrap && parallaxImg) {
+    parallaxWrap.addEventListener('mousemove', (e) => {
+      const rect = parallaxWrap.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width - 0.5;
+      const y = (e.clientY - rect.top) / rect.height - 0.5;
+      const rotateY = x * 20;
+      const rotateX = y * -15;
+      parallaxImg.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg) scale(1.03)`;
+    });
+    parallaxWrap.addEventListener('mouseleave', () => {
+      parallaxImg.style.transform = 'rotateY(0deg) rotateX(0deg) scale(1)';
+    });
+  }
+
 });
