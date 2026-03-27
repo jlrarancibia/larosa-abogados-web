@@ -142,7 +142,7 @@ nav { display: flex; align-items: center; gap: 4px; }
 .dropdown {
   display: none;
   position: absolute;
-  top: calc(100% + 8px);
+  top: 100%;
   left: 0;
   background: var(--white);
   min-width: 240px;
