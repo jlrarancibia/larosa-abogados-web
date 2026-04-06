@@ -684,7 +684,7 @@ footer {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 10px;
+  gap: 12px;
 }
 .wa-bubble {
   background: #25d366;
@@ -703,19 +703,124 @@ footer {
 }
 .wa-bubble:hover { transform: scale(1.1); background: #20bc5c; color: white; }
 .wa-tooltip {
-  background: var(--navy);
-  color: var(--white);
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-  opacity: 0;
-  transform: translateX(10px);
-  transition: var(--transition);
-  pointer-events: none;
+  display: none;
 }
-.whatsapp-float:hover .wa-tooltip { opacity: 1; transform: translateX(0); }
+
+/* WhatsApp popup card */
+.wa-popup {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+  width: 290px;
+  overflow: hidden;
+  display: none;
+  flex-direction: column;
+  animation: waSlideIn 0.3s ease;
+}
+.wa-popup.open { display: flex; }
+@keyframes waSlideIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.wa-popup-header {
+  background: #075e54;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+.wa-popup-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.3);
+  flex-shrink: 0;
+}
+.wa-popup-info { flex: 1; }
+.wa-popup-name {
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.2;
+}
+.wa-popup-role {
+  color: rgba(255,255,255,0.75);
+  font-size: 12px;
+  margin-top: 2px;
+}
+.wa-popup-online {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+}
+.wa-popup-online span {
+  width: 8px;
+  height: 8px;
+  background: #25d366;
+  border-radius: 50%;
+  display: inline-block;
+}
+.wa-popup-online p {
+  color: rgba(255,255,255,0.75);
+  font-size: 11px;
+  margin: 0;
+}
+.wa-popup-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.7);
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+}
+.wa-popup-close:hover { color: #fff; }
+.wa-popup-body {
+  background: #ece5dd;
+  padding: 16px 14px;
+}
+.wa-popup-bubble {
+  background: #fff;
+  border-radius: 0 10px 10px 10px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  color: #333;
+  line-height: 1.6;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  max-width: 230px;
+}
+.wa-popup-time {
+  font-size: 11px;
+  color: #999;
+  text-align: right;
+  margin-top: 4px;
+}
+.wa-popup-footer {
+  padding: 12px 14px;
+  background: #fff;
+}
+.wa-popup-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #25d366;
+  color: #fff;
+  border-radius: 50px;
+  padding: 11px 20px;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+.wa-popup-btn:hover { background: #20bc5c; color: #fff; }
+.wa-popup-btn i { font-size: 18px; }
 
 /* ============ PAGE HERO (internas) ============ */
 .page-hero {

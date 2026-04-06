@@ -92,6 +92,32 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
+  // ── WhatsApp popup ──
+  const waBubble = document.getElementById('waBubble');
+  const waPopup  = document.getElementById('waPopup');
+  const waClose  = document.getElementById('waPopupClose');
+
+  if (waBubble && waPopup) {
+    // Toggle on bubble click
+    waBubble.addEventListener('click', () => {
+      waPopup.classList.toggle('open');
+    });
+    // Close button
+    if (waClose) {
+      waClose.addEventListener('click', (e) => {
+        e.stopPropagation();
+        waPopup.classList.remove('open');
+      });
+    }
+    // Auto-open after 8s (only once per session)
+    if (!sessionStorage.getItem('waPopupShown')) {
+      setTimeout(() => {
+        waPopup.classList.add('open');
+        sessionStorage.setItem('waPopupShown', '1');
+      }, 8000);
+    }
+  }
+
   // ── WhatsApp click event (conversion tracking) ──
   document.querySelectorAll('a[href*="wa.me"], .wa-bubble').forEach(el => {
     el.addEventListener('click', () => {

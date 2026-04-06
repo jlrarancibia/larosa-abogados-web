@@ -233,10 +233,32 @@
 </footer>
 
 <div class="whatsapp-float">
-  <span class="wa-tooltip">¿Necesitas orientación? Escríbenos</span>
-  <a href="https://wa.me/51973535633?text=Hola%2C%20necesito%20orientaci%C3%B3n%20legal" target="_blank" rel="noopener" class="wa-bubble"><i class="fa-brands fa-whatsapp"></i></a>
+  <div class="wa-popup" id="waPopup">
+    <div class="wa-popup-header">
+      <img src="img/andres-larosa.jpg" alt="Andrés La Rosa" class="wa-popup-avatar">
+      <div class="wa-popup-info">
+        <div class="wa-popup-name">Andrés La Rosa</div>
+        <div class="wa-popup-role">Asistente Legal</div>
+        <div class="wa-popup-online"><span></span><p>En línea</p></div>
+      </div>
+      <button class="wa-popup-close" id="waPopupClose" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="wa-popup-body">
+      <div class="wa-popup-bubble">
+        Hola 👋 Soy Andrés. ¿En qué podemos ayudarte hoy? Escríbenos y te orientamos sin compromiso.
+      </div>
+      <div class="wa-popup-time">Ahora</div>
+    </div>
+    <div class="wa-popup-footer">
+      <a href="https://wa.me/51973535633?text=Hola%20Andr%C3%A9s%2C%20necesito%20orientaci%C3%B3n%20legal" target="_blank" rel="noopener" class="wa-popup-btn">
+        <i class="fa-brands fa-whatsapp"></i> Iniciar conversación
+      </a>
+    </div>
+  </div>
+  <button class="wa-bubble" id="waBubble" aria-label="WhatsApp">
+    <i class="fa-brands fa-whatsapp"></i>
+  </button>
 </div>
-
 <script src="js/main.js"></script>
 </body>
 </html>
