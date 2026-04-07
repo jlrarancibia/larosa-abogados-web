@@ -1,0 +1,31 @@
+{
+  "name": "claude-website",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jlrarancibia/larosa-abogados-web.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/jlrarancibia/larosa-abogados-web/issues"
+  },
+  "homepage": "https://github.com/jlrarancibia/larosa-abogados-web#readme",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.82.0",
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "node-fetch": "^3.3.2",
+    "puppeteer": "^24.40.0"
+  }
+}

@@ -1,0 +1,102 @@
+name: Daily Blog Generation
+
+on:
+  schedule:
+    - cron: '0 14 * * *'   # 14:00 UTC = 9:00 AM Lima (UTC-5)
+  workflow_dispatch: {}     # trigger manual para pruebas
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependencias
+        run: npm install @anthropic-ai/sdk node-fetch
+
+      - name: Generar artículo
+        run: node scripts/generate-blog.js
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
+
+      - name: Leer output del script
+        id: out
+        run: |
+          SLUG=$(jq -r .slug article-output.json)
+          TITLE=$(jq -r .title article-output.json)
+          PREVIEW=$(jq -r .preview article-output.json)
+          echo "slug=$SLUG" >> $GITHUB_OUTPUT
+          echo "title=$TITLE" >> $GITHUB_OUTPUT
+          # Escapar el preview para JSON (reemplaza comillas y newlines)
+          PREVIEW_SAFE=$(echo "$PREVIEW" | tr -d '\n' | sed 's/"/\\"/g')
+          echo "preview=$PREVIEW_SAFE" >> $GITHUB_OUTPUT
+
+      - name: Crear rama y hacer push
+        id: branch
+        run: |
+          BRANCH="blog-auto-$(date +%Y%m%d)"
+          # Si ya existe la rama (doble ejecución en el mismo día), añadir sufijo
+          if git ls-remote --heads origin "$BRANCH" | grep -q "$BRANCH"; then
+            BRANCH="${BRANCH}-2"
+          fi
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git checkout -b "$BRANCH"
+          git add "blog/${{ steps.out.outputs.slug }}.html" blog.html sitemap.xml
+          git commit -m "blog: ${{ steps.out.outputs.title }}"
+          git push origin "$BRANCH"
+
+      - name: Crear Pull Request
+        id: pr
+        run: |
+          gh pr create \
+            --title "Blog: ${{ steps.out.outputs.title }}" \
+            --body "Artículo generado automáticamente el $(date +'%d/%m/%Y').\n\nRevisar el Deploy Preview antes de aprobar." \
+            --base main \
+            --head "$BRANCH"
+          PR_NUMBER=$(gh pr view "$BRANCH" --json number -q .number)
+          echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+
+      - name: Notificar a Telegram
+        run: |
+          PREVIEW_URL="https://deploy-preview-${PR_NUMBER}--${{ secrets.NETLIFY_SITE_NAME }}.netlify.app/blog/${{ steps.out.outputs.slug }}"
+          BRANCH_SAFE=$(echo "$BRANCH" | sed 's/\//-/g')
+
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"chat_id\": \"${{ secrets.TELEGRAM_CHAT_ID }}\",
+              \"parse_mode\": \"HTML\",
+              \"text\": \"📝 <b>Nuevo artículo generado</b>\n\n<b>${{ steps.out.outputs.title }}</b>\n\n${{ steps.out.outputs.preview }}\n\n🔗 <a href='${PREVIEW_URL}'>Ver preview</a> (~2 min para cargar)\",
+              \"reply_markup\": {
+                \"inline_keyboard\": [[
+                  {\"text\": \"✅ Aprobar y Publicar\", \"callback_data\": \"approve_${PR_NUMBER}_${BRANCH_SAFE}\"},
+                  {\"text\": \"❌ Descartar\", \"callback_data\": \"discard_${PR_NUMBER}_${BRANCH_SAFE}\"}
+                ]]
+              }
+            }"
+
+      - name: Notificar fallo a Telegram
+        if: failure()
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"chat_id\": \"${{ secrets.TELEGRAM_CHAT_ID }}\",
+              \"text\": \"⚠️ Error en la generación automática del blog. Revisar logs en GitHub Actions.\"
+            }"
