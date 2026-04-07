@@ -134,7 +134,9 @@ exports.handler = async function (event) {
   console.log(`Acción: ${action}, PR: ${prNumber}, Rama: ${branch}`);
 
   // Verificar env vars
-  if (!process.env.GH_PAT) {
+  const pat = process.env.GH_PAT || '';
+  console.log(`GH_PAT presente: ${pat ? 'SÍ' : 'NO'}, longitud: ${pat.length}, primeros 8 chars: ${pat.slice(0, 8)}`);
+  if (!pat) {
     console.error('GH_PAT no está configurado');
     await answerCallback(callbackId, '⚠️ Error de configuración: GH_PAT faltante');
     return { statusCode: 200, body: 'ok' };
