@@ -12,8 +12,6 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GH_PAT }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -53,6 +51,8 @@ jobs:
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
+          # Usar GH_PAT para push (necesita permisos de escritura)
+          git remote set-url origin https://x-access-token:${{ secrets.GH_PAT }}@github.com/jlrarancibia/larosa-abogados-web.git
           git checkout -b "$BRANCH"
           git add "blog/${{ steps.out.outputs.slug }}.html" blog.html sitemap.xml
           git commit -m "blog: ${{ steps.out.outputs.title }}"
