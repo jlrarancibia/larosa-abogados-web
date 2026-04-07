@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -54,8 +56,6 @@ jobs:
 
       - name: Crear rama y hacer push
         id: branch
-        env:
-          PAT: ${{ secrets.GH_PAT }}
         run: |
           BRANCH="blog-auto-$(date +%Y%m%d)"
           # Si ya existe la rama (doble ejecución en el mismo día), añadir sufijo
@@ -66,8 +66,6 @@ jobs:
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
-          # Usar PAT como variable de entorno para autenticación
-          git remote set-url origin "https://x-access-token:${PAT}@github.com/jlrarancibia/larosa-abogados-web.git"
           git checkout -b "$BRANCH"
           git add "blog/${{ steps.out.outputs.slug }}.html" blog.html sitemap.xml
           git commit -m "blog: ${{ steps.out.outputs.title }}"
