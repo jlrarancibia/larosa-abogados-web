@@ -16,10 +16,23 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Instalar dependencias
         run: npm install @anthropic-ai/sdk node-fetch
+
+      - name: Verificar secrets cargados
+        run: |
+          if [ -z "$ANTHROPIC_KEY" ]; then echo "❌ ANTHROPIC_API_KEY no está cargado"; exit 1; fi
+          if [ -z "$TG_TOKEN" ]; then echo "❌ TELEGRAM_BOT_TOKEN no está cargado"; exit 1; fi
+          if [ -z "$TG_CHAT" ]; then echo "❌ TELEGRAM_CHAT_ID no está cargado"; exit 1; fi
+          if [ -z "$GH_TOKEN_CHECK" ]; then echo "❌ GH_PAT no está cargado"; exit 1; fi
+          echo "✅ Todos los secrets están cargados"
+        env:
+          ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GH_TOKEN_CHECK: ${{ secrets.GH_PAT }}
 
       - name: Generar artículo
         run: node scripts/generate-blog.js
