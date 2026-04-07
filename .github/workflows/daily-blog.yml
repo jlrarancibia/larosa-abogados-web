@@ -57,11 +57,8 @@ jobs:
       - name: Crear rama y hacer push
         id: branch
         run: |
-          BRANCH="blog-auto-$(date +%Y%m%d)"
-          # Si ya existe la rama (doble ejecución en el mismo día), añadir sufijo
-          if git ls-remote --heads origin "$BRANCH" | grep -q "$BRANCH"; then
-            BRANCH="${BRANCH}-2"
-          fi
+          # Nombre único con fecha+hora para evitar conflictos con runs anteriores
+          BRANCH="blog-auto-$(date +%Y%m%d-%H%M)"
           echo "BRANCH=$BRANCH" >> $GITHUB_ENV
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
           git config user.email "actions@github.com"
