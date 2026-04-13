@@ -133,17 +133,11 @@ exports.handler = async function (event) {
 
   console.log(`Acción: ${action}, PR: ${prNumber}, Rama: ${branch}`);
 
-  // Verificar env vars — log TODAS las variables disponibles para diagnóstico
-  const allEnvKeys = Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('KEY') && !k.includes('TOKEN') && !k.includes('PAT'));
-  console.log('ENV vars disponibles (sin secretos):', allEnvKeys.join(', '));
-  console.log('GH_PAT definido:', typeof process.env.GH_PAT, '| GITHUB_PAT definido:', typeof process.env.GITHUB_PAT);
-
-  // Intentar GH_PAT o GITHUB_PAT como fallback
-  const pat = process.env.GH_PAT || process.env.GITHUB_PAT || '';
-  console.log(`PAT presente: ${pat ? 'SÍ' : 'NO'}, longitud: ${pat.length}, inicio: ${pat.slice(0, 4)}`);
+  // Verificar env vars
+  const pat = process.env.GH_PAT || '';
   if (!pat) {
-    console.error('GH_PAT no está configurado en Netlify Functions');
-    await answerCallback(callbackId, '⚠️ GH_PAT faltante en Netlify. Revisa Project config → Env vars → scope Functions');
+    console.error('GH_PAT no está configurado');
+    await answerCallback(callbackId, '⚠️ Error de configuración: GH_PAT faltante');
     return { statusCode: 200, body: 'ok' };
   }
 
