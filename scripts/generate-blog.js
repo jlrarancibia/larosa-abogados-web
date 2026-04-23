@@ -575,7 +575,62 @@ function updateBlogHTML(cardHTML) {
   fs.writeFileSync(blogPath, content, 'utf8');
 }
 
-// ── 7. Actualizar sitemap.xml ────────────────────────────────
+// ── 7. Actualizar index.html (Temas Relevantes) ─────────────
+
+const PRACTICE_AREA_ICONS = {
+  'derecho laboral':    'fa-briefcase',
+  'arrendamientos':     'fa-building',
+  'sucesiones':         'fa-scroll',
+  'derecho civil':      'fa-scale-balanced',
+  'derecho de familia': 'fa-house-user',
+  'derecho comercial':  'fa-handshake',
+  'derecho societario': 'fa-building-columns',
+  'actualidad':         'fa-landmark',
+  'coyuntura':          'fa-landmark',
+};
+
+function updateIndexHTML(data, slug) {
+  const indexPath = path.join(ROOT, 'index.html');
+  let content = fs.readFileSync(indexPath, 'utf8');
+
+  const marker = '<div class="trending-list">';
+  const idx = content.indexOf(marker);
+  if (idx === -1) { console.warn('Marcador trending-list no encontrado en index.html'); return; }
+
+  const monthYear = getMonthYear();
+  const areaKey = (data.practiceAreaLabel || '').toLowerCase();
+  const icon = PRACTICE_AREA_ICONS[areaKey] || 'fa-newspaper';
+  const isNews = ['actualidad', 'coyuntura'].includes(areaKey);
+  const tagStyle = isNews ? ` style="background:#c0392b;color:#fff;"` : '';
+
+  const newItem = `
+      <a href="blog/${slug}.html" class="trending-item">
+        <div class="trend-icon"><i class="fa-solid ${icon}"></i></div>
+        <div>
+          <span class="trend-tag"${tagStyle}>${data.practiceAreaLabel}</span>
+          <div class="trend-title">${data.h1}</div>
+          <div class="trend-date"><i class="fa-regular fa-calendar"></i> ${monthYear}</div>
+        </div>
+      </a>
+`;
+
+  // Insert new item at top of trending-list
+  const insertAt = idx + marker.length;
+  content = content.slice(0, insertAt) + newItem + content.slice(insertAt);
+
+  // Remove the 7th trending-item to keep the list at 6
+  const items = [...content.matchAll(/<a href="blog\/[^"]+\.html" class="trending-item">/g)];
+  if (items.length > 6) {
+    const seventh = items[6];
+    const closeTag = '</a>';
+    const endIdx = content.indexOf(closeTag, seventh.index) + closeTag.length;
+    content = content.slice(0, seventh.index) + content.slice(endIdx);
+  }
+
+  fs.writeFileSync(indexPath, content, 'utf8');
+}
+
+// ── 8. Actualizar sitemap.xml ────────────────────────────────
 
 function updateSitemap(slug) {
   const sitemapPath = path.join(ROOT, 'sitemap.xml');
@@ -628,6 +683,9 @@ async function main() {
 
   console.log('📋 Actualizando blog.html...');
   updateBlogHTML(buildCardHTML(articleData, slug));
+
+  console.log('🏠 Actualizando index.html (Temas Relevantes)...');
+  updateIndexHTML(articleData, slug);
 
   console.log('🗺️  Actualizando sitemap.xml...');
   updateSitemap(slug);
