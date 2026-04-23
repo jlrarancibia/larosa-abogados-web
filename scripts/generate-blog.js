@@ -157,23 +157,63 @@ async function fetchNews() {
   }).slice(0, 15);
 }
 
-// ── 2. Elegir tema con Claude Haiku ─────────────────────────
+// ── 2. Extraer títulos ya publicados ────────────────────────
 
-async function pickBestTopic(client, newsItems) {
+function getPublishedTitles() {
+  const blogPath = path.join(ROOT, 'blog.html');
+  try {
+    const content = fs.readFileSync(blogPath, 'utf8');
+    const titles = [];
+    // Extrae <h2> dentro de elementos .blog-full-card
+    const cardRegex = /class="blog-full-card"[\s\S]*?<h2>([\s\S]*?)<\/h2>/g;
+    let match;
+    while ((match = cardRegex.exec(content)) !== null) {
+      const title = match[1].replace(/<[^>]+>/g, '').trim();
+      if (title) titles.push(title);
+    }
+    return titles;
+  } catch (e) {
+    console.warn('No se pudo leer blog.html para obtener títulos publicados:', e.message);
+    return [];
+  }
+}
+
+// ── 3. Elegir tema con Claude Haiku ─────────────────────────
+
+const EVERGREEN_FALLBACKS = [
+  { title: 'Despido arbitrario en Perú: derechos del trabajador', practiceArea: 'derecho laboral', angle: 'Guía práctica sobre los derechos del trabajador ante un despido arbitrario en Perú' },
+  { title: 'Contratos de arrendamiento: cláusulas esenciales 2026', practiceArea: 'arrendamientos', angle: 'Qué cláusulas no pueden faltar en un contrato de arrendamiento en Lima' },
+  { title: 'Sucesión intestada en Perú: quiénes heredan sin testamento', practiceArea: 'sucesiones', angle: 'Guía sobre cómo funciona la herencia cuando no hay testamento en Perú' },
+  { title: 'Responsabilidad civil extracontractual en Perú', practiceArea: 'derecho civil', angle: 'Cuándo y cómo reclamar daños y perjuicios bajo el Código Civil peruano' },
+  { title: 'Pensión de alimentos: pasos para solicitarla en Perú', practiceArea: 'derecho de familia', angle: 'Proceso paso a paso para demandar pensión de alimentos en Lima' },
+  { title: 'Constitución de empresa en Perú: SAC vs EIRL', practiceArea: 'derecho societario', angle: 'Comparativa legal para elegir el tipo de empresa más conveniente en Perú' },
+  { title: 'CTS 2026: cálculo y derechos del trabajador peruano', practiceArea: 'derecho laboral', angle: 'Cómo se calcula la CTS y cuándo puede el trabajador retirarla' },
+];
+
+async function pickBestTopic(client, newsItems, publishedTitles = []) {
+  const publishedBlock = publishedTitles.length
+    ? `\n\nTemas YA PUBLICADOS en el blog (debes elegir un tema COMPLETAMENTE DIFERENTE, sin repetir ninguno de estos):\n${publishedTitles.map((t, i) => `${i + 1}. ${t}`).join('\n')}`
+    : '';
+
   if (!newsItems.length) {
-    // Fallback: tema evergreen
+    // Fallback: rotar entre temas evergreen excluyendo los ya publicados
+    const available = EVERGREEN_FALLBACKS.filter(fb =>
+      !publishedTitles.some(pt => pt.toLowerCase().includes(fb.practiceArea.split(' ')[1] || fb.practiceArea))
+    );
+    const pick = available.length ? available[Math.floor(Math.random() * available.length)] : EVERGREEN_FALLBACKS[0];
     return {
-      selectedNews: { title: 'Derechos laborales en Perú 2026', snippet: '', source: '' },
-      practiceArea: 'derecho laboral',
-      angle: 'Guía práctica sobre los derechos laborales más importantes que todo trabajador peruano debe conocer',
+      selectedNews: { title: pick.title, snippet: '', source: '' },
+      practiceArea: pick.practiceArea,
+      angle: pick.angle,
     };
   }
 
   const prompt = `Eres un estratega de contenidos para un estudio jurídico peruano.
 
 Áreas de práctica del estudio: ${PRACTICE_AREAS.join(', ')}.
+${publishedBlock}
 
-De estas noticias recientes de Perú, selecciona la que más se conecte con las áreas del estudio y tenga mayor potencial de interés para personas naturales o empresas en Lima que buscan orientación legal.
+De estas noticias recientes de Perú, selecciona la que más se conecte con las áreas del estudio, tenga mayor potencial de interés para personas naturales o empresas en Lima que buscan orientación legal, y que NO haya sido cubierta ya en el blog.
 
 Noticias:
 ${newsItems.map((n, i) => `${i}. [${n.source}] ${n.title} — ${n.snippet}`).join('\n')}
@@ -558,8 +598,15 @@ async function main() {
   const newsItems = await fetchNews();
   console.log(`   Encontradas ${newsItems.length} noticias.`);
 
+  console.log('📚 Leyendo títulos ya publicados en blog.html...');
+  const publishedTitles = getPublishedTitles();
+  console.log(`   Artículos previos encontrados: ${publishedTitles.length}`);
+  if (publishedTitles.length) {
+    console.log('   Temas a evitar:', publishedTitles.slice(0, 5).join(' | '));
+  }
+
   console.log('🤖 Eligiendo el mejor tema con Claude Haiku...');
-  const topic = await pickBestTopic(client, newsItems);
+  const topic = await pickBestTopic(client, newsItems, publishedTitles);
   console.log(`   Tema elegido: ${topic.selectedNews.title}`);
   console.log(`   Ángulo: ${topic.angle}`);
 
