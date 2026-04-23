@@ -659,6 +659,8 @@ footer {
 .footer-links { display: flex; flex-direction: column; gap: 10px; }
 .footer-links a { font-size: 14px; color: rgba(255,255,255,0.65); transition: var(--transition); }
 .footer-links a:hover { color: var(--gold); padding-left: 6px; }
+.sidebar-card .footer-links a { color: var(--navy); }
+.sidebar-card .footer-links a:hover { color: var(--gold); padding-left: 6px; }
 .footer-contact-item { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px; font-size: 14px; }
 .footer-contact-item i { color: var(--gold); margin-top: 3px; min-width: 16px; }
 
