@@ -648,22 +648,42 @@ function updateSitemap(slug) {
 
 async function main() {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const TOPIC_OVERRIDE = (process.env.TOPIC_OVERRIDE || '').trim();
+  const EDIT_INSTRUCTIONS = (process.env.EDIT_INSTRUCTIONS || '').trim();
 
-  console.log('📰 Buscando noticias legales en Perú...');
-  const newsItems = await fetchNews();
-  console.log(`   Encontradas ${newsItems.length} noticias.`);
+  let topic;
 
-  console.log('📚 Leyendo títulos ya publicados en blog.html...');
-  const publishedTitles = getPublishedTitles();
-  console.log(`   Artículos previos encontrados: ${publishedTitles.length}`);
-  if (publishedTitles.length) {
-    console.log('   Temas a evitar:', publishedTitles.slice(0, 5).join(' | '));
+  if (TOPIC_OVERRIDE) {
+    console.log(`📌 Tema solicitado manualmente: ${TOPIC_OVERRIDE}`);
+    if (EDIT_INSTRUCTIONS) console.log(`✏️  Instrucciones de edición: ${EDIT_INSTRUCTIONS}`);
+    topic = {
+      selectedNews: {
+        title: TOPIC_OVERRIDE,
+        snippet: EDIT_INSTRUCTIONS || '',
+        source: 'Solicitud manual',
+      },
+      practiceArea: 'actualidad legal',
+      angle: EDIT_INSTRUCTIONS
+        ? `${TOPIC_OVERRIDE}. Consideraciones adicionales: ${EDIT_INSTRUCTIONS}`
+        : `Análisis legal completo, objetivo y actualizado sobre: ${TOPIC_OVERRIDE}`,
+    };
+  } else {
+    console.log('📰 Buscando noticias legales en Perú...');
+    const newsItems = await fetchNews();
+    console.log(`   Encontradas ${newsItems.length} noticias.`);
+
+    console.log('📚 Leyendo títulos ya publicados en blog.html...');
+    const publishedTitles = getPublishedTitles();
+    console.log(`   Artículos previos encontrados: ${publishedTitles.length}`);
+    if (publishedTitles.length) {
+      console.log('   Temas a evitar:', publishedTitles.slice(0, 5).join(' | '));
+    }
+
+    console.log('🤖 Eligiendo el mejor tema con Claude Haiku...');
+    topic = await pickBestTopic(client, newsItems, publishedTitles);
+    console.log(`   Tema elegido: ${topic.selectedNews.title}`);
+    console.log(`   Ángulo: ${topic.angle}`);
   }
-
-  console.log('🤖 Eligiendo el mejor tema con Claude Haiku...');
-  const topic = await pickBestTopic(client, newsItems, publishedTitles);
-  console.log(`   Tema elegido: ${topic.selectedNews.title}`);
-  console.log(`   Ángulo: ${topic.angle}`);
 
   console.log('✍️  Generando artículo completo con Claude Sonnet...');
   const articleData = await generateArticle(client, topic);

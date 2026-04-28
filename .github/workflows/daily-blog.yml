@@ -3,7 +3,20 @@ name: Daily Blog Generation
 on:
   schedule:
     - cron: '0 14 * * *'   # 14:00 UTC = 9:00 AM Lima (UTC-5)
-  workflow_dispatch: {}     # trigger manual para pruebas
+  workflow_dispatch:
+    inputs:
+      topic_override:
+        description: 'Tema específico a escribir (omite búsqueda de noticias)'
+        required: false
+        default: ''
+      edit_pr:
+        description: 'Número de PR a cerrar antes de crear el nuevo (para ediciones)'
+        required: false
+        default: ''
+      edit_instructions:
+        description: 'Instrucciones de edición para mejorar el artículo'
+        required: false
+        default: ''
 
 jobs:
   generate:
@@ -36,11 +49,19 @@ jobs:
           TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
           GH_TOKEN_CHECK: ${{ secrets.GH_PAT }}
 
+      - name: Cerrar PR anterior (si es edición)
+        if: ${{ inputs.edit_pr != '' }}
+        run: gh pr close "${{ inputs.edit_pr }}" --delete-branch || true
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+
       - name: Generar artículo
         run: node scripts/generate-blog.js
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
+          TOPIC_OVERRIDE: ${{ inputs.topic_override }}
+          EDIT_INSTRUCTIONS: ${{ inputs.edit_instructions }}
 
       - name: Leer output del script
         id: out
@@ -50,30 +71,35 @@ jobs:
           PREVIEW=$(jq -r .preview article-output.json)
           echo "slug=$SLUG" >> $GITHUB_OUTPUT
           echo "title=$TITLE" >> $GITHUB_OUTPUT
-          # Escapar el preview para JSON (reemplaza comillas y newlines)
           PREVIEW_SAFE=$(echo "$PREVIEW" | tr -d '\n' | sed 's/"/\\"/g')
           echo "preview=$PREVIEW_SAFE" >> $GITHUB_OUTPUT
 
       - name: Crear rama y hacer push
         id: branch
         run: |
-          # Nombre único con fecha+hora para evitar conflictos con runs anteriores
           BRANCH="blog-auto-$(date +%Y%m%d-%H%M)"
           echo "BRANCH=$BRANCH" >> $GITHUB_ENV
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
           git checkout -b "$BRANCH"
-          git add "blog/${{ steps.out.outputs.slug }}.html" blog.html sitemap.xml
+          git add "blog/${{ steps.out.outputs.slug }}.html" blog.html sitemap.xml index.html
           git commit -m "blog: ${{ steps.out.outputs.title }}"
           git push origin "$BRANCH"
 
       - name: Crear Pull Request
         id: pr
         run: |
+          BODY="Artículo generado el $(date +'%d/%m/%Y')."
+          if [ -n "${{ inputs.topic_override }}" ]; then
+            BODY="$BODY\n\n📌 Tema solicitado: ${{ inputs.topic_override }}"
+          fi
+          if [ -n "${{ inputs.edit_instructions }}" ]; then
+            BODY="$BODY\n\n✏️ Instrucciones de edición: ${{ inputs.edit_instructions }}"
+          fi
           gh pr create \
             --title "Blog: ${{ steps.out.outputs.title }}" \
-            --body "Artículo generado automáticamente el $(date +'%d/%m/%Y').\n\nRevisar el Deploy Preview antes de aprobar." \
+            --body "$BODY" \
             --base main \
             --head "$BRANCH"
           PR_NUMBER=$(gh pr view "$BRANCH" --json number -q .number)
@@ -87,15 +113,23 @@ jobs:
           PREVIEW_URL="https://deploy-preview-${PR_NUMBER}--${{ secrets.NETLIFY_SITE_NAME }}.netlify.app/blog/${{ steps.out.outputs.slug }}"
           BRANCH_SAFE=$(echo "$BRANCH" | sed 's/\//-/g')
 
+          # Indicar si es artículo solicitado o automático
+          if [ -n "${{ inputs.topic_override }}" ]; then
+            HEADER="✍️ <b>Artículo solicitado generado</b>"
+          else
+            HEADER="📝 <b>Nuevo artículo generado</b>"
+          fi
+
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -H "Content-Type: application/json" \
             -d "{
               \"chat_id\": \"${{ secrets.TELEGRAM_CHAT_ID }}\",
               \"parse_mode\": \"HTML\",
-              \"text\": \"📝 <b>Nuevo artículo generado</b>\n\n<b>${{ steps.out.outputs.title }}</b>\n\n${{ steps.out.outputs.preview }}\n\n🔗 <a href='${PREVIEW_URL}'>Ver preview</a> (~2 min para cargar)\",
+              \"text\": \"${HEADER}\n\n<b>${{ steps.out.outputs.title }}</b>\n\n${{ steps.out.outputs.preview }}\n\n🔗 <a href='${PREVIEW_URL}'>Ver preview</a> (~2 min para cargar)\",
               \"reply_markup\": {
                 \"inline_keyboard\": [[
                   {\"text\": \"✅ Aprobar y Publicar\", \"callback_data\": \"approve_${PR_NUMBER}_${BRANCH_SAFE}\"},
+                  {\"text\": \"✏️ Editar\", \"callback_data\": \"edit_${PR_NUMBER}_${BRANCH_SAFE}\"},
                   {\"text\": \"❌ Descartar\", \"callback_data\": \"discard_${PR_NUMBER}_${BRANCH_SAFE}\"}
                 ]]
               }
@@ -108,5 +142,5 @@ jobs:
             -H "Content-Type: application/json" \
             -d "{
               \"chat_id\": \"${{ secrets.TELEGRAM_CHAT_ID }}\",
-              \"text\": \"⚠️ Error en la generación automática del blog. Revisar logs en GitHub Actions.\"
+              \"text\": \"⚠️ Error en la generación del blog. Revisar logs en GitHub Actions.\"
             }"
