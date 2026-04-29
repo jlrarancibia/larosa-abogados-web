@@ -37,7 +37,7 @@ const UNSPLASH_POOL = {
   laboral:    ['photo-1568992687947-868a62a9f521', 'photo-1573497620053-ea5300f94f21'],
   propiedad:  ['photo-1560518883-ce09059eeffa', 'photo-1558036117-15d82a90b9b1'],
   finanzas:   ['photo-1554224155-6726b3ff858f', 'photo-1611974789855-9c2a0a7236a3'],
-  empresa:    ['photo-1507003211169-0a1dd7228f2d', 'photo-1529107386315-e1a2ed48a620'],
+  empresa:    ['photo-1507003211169-0a1dd7228f2d', 'photo-1529107386315-e1a2ed48a620', 'photo-1556761175-4b46a572b786'],
   documentos: ['photo-1568667256549-094345857637', 'photo-1450101499163-c8848c66ca85'],
 };
 
