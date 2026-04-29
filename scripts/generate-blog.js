@@ -27,19 +27,37 @@ const PRACTICE_AREAS = [
   'derecho societario',
 ];
 
-// Unsplash photo IDs pre-verificados por tema
-const UNSPLASH_IDS = {
-  legal:      'photo-1589578527966-fdac0f44566c',
-  juzgado:    'photo-1505664194779-8beaceb93d44',
-  contrato:   'photo-1450101499163-c8848c66ca85',
-  reunion:    'photo-1521791136064-7986c2920216',
-  familia:    'photo-1529156069898-49953e39b3ac',
-  laboral:    'photo-1568992687947-868a62a9f521',
-  propiedad:  'photo-1560518883-ce09059eeffa',
-  finanzas:   'photo-1554224155-6726b3ff858f',
-  empresa:    'photo-1507003211169-0a1dd7228f2d',
-  documentos: 'photo-1568667256549-094345857637',
+// Unsplash photo IDs pre-verificados por tema — pool con alternativas
+const UNSPLASH_POOL = {
+  legal:      ['photo-1589578527966-fdac0f44566c', 'photo-1589829545856-d10d557cf95f'],
+  juzgado:    ['photo-1540910419892-4a36d2c3266c', 'photo-1505664194779-8beaceb93d44'],
+  contrato:   ['photo-1450101499163-c8848c66ca85', 'photo-1568667256549-094345857637'],
+  reunion:    ['photo-1521791136064-7986c2920216', 'photo-1522071820081-009f0129c71c'],
+  familia:    ['photo-1529156069898-49953e39b3ac', 'photo-1491013516836-7db643ee125a'],
+  laboral:    ['photo-1568992687947-868a62a9f521', 'photo-1573497620053-ea5300f94f21'],
+  propiedad:  ['photo-1560518883-ce09059eeffa', 'photo-1558036117-15d82a90b9b1'],
+  finanzas:   ['photo-1554224155-6726b3ff858f', 'photo-1611974789855-9c2a0a7236a3'],
+  empresa:    ['photo-1507003211169-0a1dd7228f2d', 'photo-1529107386315-e1a2ed48a620'],
+  documentos: ['photo-1568667256549-094345857637', 'photo-1450101499163-c8848c66ca85'],
 };
+
+// Construye un mapa key→id evitando IDs ya usados en blog.html
+function buildAvailableIds() {
+  const usedIds = new Set();
+  try {
+    const blogHtml = fs.readFileSync(path.join(ROOT, 'blog.html'), 'utf8');
+    for (const m of blogHtml.matchAll(/unsplash\.com\/(photo-[a-z0-9]+)\?/g)) {
+      usedIds.add(m[1]);
+    }
+  } catch (e) { /* continuar con pool completo si falla */ }
+
+  const available = {};
+  for (const [key, ids] of Object.entries(UNSPLASH_POOL)) {
+    const unused = ids.filter(id => !usedIds.has(id));
+    available[key] = unused.length ? unused[0] : ids[ids.length - 1];
+  }
+  return available;
+}
 
 // ── Utilidades HTTP ──────────────────────────────────────────
 
@@ -264,7 +282,7 @@ function getMonthYear() {
 
 async function generateArticle(client, topic) {
   const today = getLimaDate();
-  const idsJson = JSON.stringify(UNSPLASH_IDS, null, 2);
+  const idsJson = JSON.stringify(buildAvailableIds(), null, 2);
 
   const systemPrompt = `Eres Jorge H. La Rosa Ruiz, abogado fundador del estudio La Rosa & Abogados de Lima, Perú, con más de 20 años de experiencia. Escribes artículos de blog en español peruano formal pero accesible, dirigidos a personas naturales y empresas que buscan orientación legal en Lima.
 
